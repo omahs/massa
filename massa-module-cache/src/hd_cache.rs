@@ -3,6 +3,7 @@ use crate::types::{
 };
 use core::panic;
 use massa_hash::Hash;
+use massa_models::address::Address;
 use massa_sc_runtime::{GasCosts, RuntimeModule};
 use massa_serialization::{DeserializeError, Deserializer, Serializer};
 use rand::RngCore;
@@ -35,7 +36,7 @@ macro_rules! metadata_key {
     };
 }
 
-pub(crate) struct HDCache {
+pub struct HDCache {
     /// RocksDB database
     db: DB,
     /// How many entries are in the db. Count is initialized at creation time by iterating
@@ -135,6 +136,13 @@ impl HDCache {
         self.db
             .put(metadata_key!(hash), ser_metadata)
             .expect(CRUD_ERROR);
+    }
+
+    pub fn print(&self) {
+        let mut iterator = self.db.iterator(IteratorMode::Start);
+        while let Some(Ok((key, value))) = iterator.next() {
+            println!("key: {:?}, value: {:?}", key, value);
+        }
     }
 
     /// Retrieve a module

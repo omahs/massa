@@ -798,6 +798,24 @@ impl LedgerDB {
             })
             .collect()
     }
+
+    pub fn print(&self) {
+        use massa_models::address::AddressDeserializer;
+        let handle = self.db.cf_handle(LEDGER_CF).expect(CF_ERROR);
+
+        let ledger = self
+            .db
+            .iterator_cf(handle, IteratorMode::Start)
+            .collect::<Vec<_>>();
+        for (key, entry) in ledger.iter().flatten() {
+            let (rest, address) = AddressDeserializer::new()
+            .deserialize::<DeserializeError>(&key[..])
+            .unwrap();
+            println!("Address: {:?}", address);
+            println!("Key: {:?}", key);
+            println!("Entry: {:?}", entry);
+        }
+    }
 }
 
 /// For a given start prefix (inclusive), returns the correct end prefix (non-inclusive).

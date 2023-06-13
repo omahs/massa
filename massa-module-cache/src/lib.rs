@@ -9,6 +9,6 @@
 pub mod config;
 pub mod controller;
 pub mod error;
-mod hd_cache;
+pub mod hd_cache;
 mod lru_cache;
 pub mod types;

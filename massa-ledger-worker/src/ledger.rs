@@ -50,6 +50,9 @@ impl FinalLedger {
             config,
         }
     }
+    pub fn print(&self) {
+        self.sorted_ledger.print();
+    }
 }
 
 impl LedgerController for FinalLedger {
