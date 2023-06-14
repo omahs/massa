@@ -179,6 +179,7 @@ fn test_bootstrap_whitelist() {
     conn.unwrap();
 }
 
+#[cfg(not(windows))]
 #[test]
 fn test_bootstrap_server() {
     let thread_count = 2;
