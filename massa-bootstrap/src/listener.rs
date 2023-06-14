@@ -78,12 +78,17 @@ impl BootstrapTcpListener {
 
 impl BSEventPoller for BootstrapTcpListener {
     fn poll(&mut self) -> Result<PollEvent, BootstrapError> {
+
+        println!("Waiting for poll event");
+
         self.poll.poll(&mut self.events, None).unwrap();
 
         // Confirm that we are not being signalled to shut down
         if self.events.iter().any(|ev| ev.token() == STOP_LISTENER) {
             return Ok(PollEvent::Stop);
         }
+
+        println!("Accepting new connection");
 
         // Ther could be more than one connection ready, but we want to re-check for the stop
         // signal after processing each connection.

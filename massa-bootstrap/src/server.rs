@@ -243,6 +243,8 @@ impl<L: BSEventPoller> BootstrapServer<'_, L> {
                 }
             };
 
+            println!("Accepting new connection - event_loop. Session count: {}", Arc::strong_count(&bootstrap_sessions_counter) - 1);
+
             // claim a slot in the max_bootstrap_sessions
             let server_binding = BootstrapServerBinder::new(
                 dplx,
@@ -312,6 +314,8 @@ impl<L: BSEventPoller> BootstrapServer<'_, L> {
                 let config = self.bootstrap_config.clone();
 
                 let bootstrap_count_token = bootstrap_sessions_counter.clone();
+
+                println!("Starting bootstrap session (remote_addr: {})", remote_addr);
 
                 let _ = thread::Builder::new()
                     .name(format!("bootstrap thread, peer: {}", remote_addr))
