@@ -243,7 +243,7 @@ impl<L: BSEventPoller> BootstrapServer<'_, L> {
                 }
             };
 
-            println!("Accepting new connection - event_loop. Session count: {}", Arc::strong_count(&bootstrap_sessions_counter) - 1);
+            println!("Accepting new connection - event_loop. Remote addr: {} Session count: {}", remote_addr, Arc::strong_count(&bootstrap_sessions_counter) - 1);
 
             // claim a slot in the max_bootstrap_sessions
             let server_binding = BootstrapServerBinder::new(
