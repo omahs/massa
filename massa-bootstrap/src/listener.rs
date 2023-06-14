@@ -83,10 +83,14 @@ impl BSEventPoller for BootstrapTcpListener {
     fn poll(&mut self) -> Result<PollEvent, BootstrapError> {
         self.poll.poll(&mut self.events, None).unwrap();
 
+        println!("Leo - Waiting for poll event");
+
         // Confirm that we are not being signalled to shut down
         if self.events.iter().any(|ev| ev.token() == STOP_LISTENER) {
             return Ok(PollEvent::Stop);
         }
+
+        println!("Leo - Accepting {} new connection", self.events.iter().count());
 
         let mut results = Vec::with_capacity(self.events.iter().count());
 
@@ -106,7 +110,7 @@ impl BSEventPoller for BootstrapTcpListener {
         // as this yields mio::net::TcpStream instead of std::net::TcpStream
         while let Ok((_, remote_addr)) = self._mio_server.accept() {
             warn!(
-                "Mio server still had bootstrap connection data to read. Remote address: {}",
+                "Leo - Mio server still had bootstrap connection data to read. Remote address: {}",
                 remote_addr
             );
         }

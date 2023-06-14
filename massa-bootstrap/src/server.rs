@@ -245,6 +245,9 @@ impl<L: BSEventPoller> BootstrapServer<'_, L> {
             };
 
             for (dplx, remote_addr) in connections {
+
+                println!("Leo - Accepting new connection - event_loop. Remote addr: {} Session count: {}", remote_addr, Arc::strong_count(&bootstrap_sessions_counter) - 1);
+
                 // claim a slot in the max_bootstrap_sessions
                 let server_binding = BootstrapServerBinder::new(
                     dplx,
@@ -254,6 +257,7 @@ impl<L: BSEventPoller> BootstrapServer<'_, L> {
 
                 // check whether incoming peer IP is allowed.
                 if let Err(error_msg) = self.white_black_list.is_ip_allowed(&remote_addr) {
+                    println!("Leo - IP NOT IN WHITELIST: {}", remote_addr);
                     server_binding.close_and_send_error(
                         error_msg.to_string(),
                         remote_addr,
@@ -280,7 +284,7 @@ impl<L: BSEventPoller> BootstrapServer<'_, L> {
                             .retain(|_k, v| now.duration_since(*v) <= per_ip_min_interval);
                         if self.ip_hist_map.len() > self.bootstrap_config.ip_list_max_size {
                             // too many IPs are spamming us: clear cache
-                            warn!("high bootstrap load: at least {} different IPs attempted bootstrap in the last {}", self.ip_hist_map.len(),format_duration(self.bootstrap_config.per_ip_min_interval.to_duration()).to_string());
+                            warn!("Leo - high bootstrap load: at least {} different IPs attempted bootstrap in the last {}", self.ip_hist_map.len(),format_duration(self.bootstrap_config.per_ip_min_interval.to_duration()).to_string());
                             self.ip_hist_map.clear();
                         }
                     }
@@ -319,6 +323,8 @@ impl<L: BSEventPoller> BootstrapServer<'_, L> {
 
                     let bootstrap_count_token = bootstrap_sessions_counter.clone();
 
+                    println!("Leo - Starting bootstrap session (remote_addr: {})", remote_addr);
+
                     let _ = thread::Builder::new()
                         .name(format!("bootstrap thread, peer: {}", remote_addr))
                         .spawn(move || {
@@ -338,6 +344,7 @@ impl<L: BSEventPoller> BootstrapServer<'_, L> {
                         "active_count": Arc::strong_count(&bootstrap_sessions_counter) - 1
                     });
                 } else {
+                    println!("Leo - Bootstrap failed because the bootstrap server currently has no slots available. for addr: {}", remote_addr);
                     server_binding.close_and_send_error(
                         "Bootstrap failed because the bootstrap server currently has no slots available.".to_string(),
                         remote_addr,
@@ -396,6 +403,7 @@ fn run_bootstrap_session(
     protocol_controller: Box<dyn ProtocolController>,
 ) {
     debug!("running bootstrap for peer {}", remote_addr);
+    println!("Leo - run_bootstrap_session START - running bootstrap for peer {}", remote_addr);
     let deadline = Instant::now() + config.bootstrap_timeout.to_duration();
     // TODO: reinstate prevention of bootstrap slot camping. Deadline cancellation is one option
     let res = manage_bootstrap(
@@ -416,7 +424,7 @@ fn run_bootstrap_session(
     drop(arc_counter);
     match res {
         Err(BootstrapError::TimedOut(_)) => {
-            debug!("bootstrap timeout for peer {}", remote_addr);
+            println!("Leo - BS ERROR - bootstrap timeout for peer {}", remote_addr);
             // We allow unused result because we don't care if an error is thrown when
             // sending the error message to the server we will close the socket anyway.
             let _ = server.send_error_timeout(format!(
@@ -424,18 +432,18 @@ fn run_bootstrap_session(
                 format_duration(config.bootstrap_timeout.to_duration())
             ));
         }
-        Err(BootstrapError::ReceivedError(error)) => debug!(
-            "bootstrap serving error received from peer {}: {}",
+        Err(BootstrapError::ReceivedError(error)) => println!(
+            "Leo - BS ERROR - bootstrap serving error received from peer {}: {}",
             remote_addr, error
         ),
         Err(err) => {
-            debug!("bootstrap serving error for peer {}: {}", remote_addr, err);
+            println!("Leo - BS ERROR - bootstrap serving error for peer {}: {}", remote_addr, err);
             // We allow unused result because we don't care if an error is thrown when
             // sending the error message to the server we will close the socket anyway.
             let _ = server.send_error_timeout(err.to_string());
         }
         Ok(_) => {
-            info!("bootstrapped peer {}", remote_addr);
+            info!("Leo - BS SUCCESS - bootstrapped peer {}", remote_addr);
         }
     }
 }
