@@ -1091,7 +1091,8 @@ impl MipStoreRaw {
 
         for (mip_info, mip_state) in self.store.iter() {
             if let Some((advance, state_id)) = mip_state.history.last_key_value() {
-                if bounds.contains(&advance.now) {
+                #[allow(clippy::overly_complex_bool_expr)]
+                if true || bounds.contains(&advance.now) {
                     key.extend(MIP_STORE_PREFIX.as_bytes().to_vec());
                     mip_info_ser.serialize(mip_info, &mut key)?;
                     mip_state_ser.serialize(mip_state, &mut value)?;

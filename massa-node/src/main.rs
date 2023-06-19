@@ -76,6 +76,7 @@ use massa_models::config::{
     POOL_CONTROLLER_ENDORSEMENTS_CHANNEL_SIZE, POOL_CONTROLLER_OPERATIONS_CHANNEL_SIZE,
 };
 use massa_models::slot::Slot;
+use massa_models::timeslots::get_block_slot_timestamp;
 use massa_pool_exports::{PoolChannels, PoolConfig, PoolManager};
 use massa_pool_worker::start_pool_controller;
 use massa_pos_exports::{PoSConfig, SelectorConfig, SelectorManager};
@@ -84,7 +85,8 @@ use massa_protocol_exports::{ProtocolConfig, ProtocolManager};
 use massa_protocol_worker::{create_protocol_controller, start_protocol_controller};
 use massa_storage::Storage;
 use massa_time::MassaTime;
-use massa_versioning::versioning::{MipComponent, MipInfo, MipState};
+use massa_versioning::test_helpers::versioning_helpers::advance_state_until;
+use massa_versioning::versioning::{ComponentState, MipComponent, MipInfo, MipState};
 use massa_versioning::versioning::{MipStatsConfig, MipStore};
 use massa_wallet::Wallet;
 use parking_lot::RwLock;
@@ -280,7 +282,33 @@ async fn launch(
     let mip_0001_defined_start = MassaTime::from_utc_ymd_hms(2023, 2, 14, 14, 30, 0).unwrap();
     let mip_0002_start = MassaTime::from_utc_ymd_hms(2023, 6, 16, 13, 0, 0).unwrap();
     let mip_0002_timeout = MassaTime::from_utc_ymd_hms(2023, 6, 19, 14, 0, 0).unwrap();
-    let mip_0002_defined_start = MassaTime::from_utc_ymd_hms(2023, 6, 16, 10, 0, 0).unwrap();
+    let _mip_0002_defined_start = MassaTime::from_utc_ymd_hms(2023, 6, 16, 10, 0, 0).unwrap();
+
+    let mip_0002 = MipInfo {
+        name: "MIP-0002".to_string(),
+        version: 2,
+        components: BTreeMap::from([(MipComponent::FinalStateHashKind, 1)]),
+        start: mip_0002_start,
+        timeout: mip_0002_timeout,
+        activation_delay: T0
+            .saturating_mul(PERIODS_PER_CYCLE.saturating_add(1))
+            .saturating_mul(40),
+    };
+
+    let mip_0002_locked_in_slot = Slot::new(71295, 14);
+    let mip_0002_locked_in_timestamp = get_block_slot_timestamp(
+        THREAD_COUNT,
+        T0,
+        *GENESIS_TIMESTAMP,
+        mip_0002_locked_in_slot,
+    )
+    .unwrap();
+
+    let mip_0002_state = advance_state_until(
+        ComponentState::locked_in(mip_0002_locked_in_timestamp),
+        &mip_0002,
+    );
+
     let mip_list_1: [(MipInfo, MipState); 2] = [
         (
             MipInfo {
@@ -296,19 +324,7 @@ async fn launch(
             },
             MipState::new(mip_0001_defined_start),
         ),
-        (
-            MipInfo {
-                name: "MIP-0002".to_string(),
-                version: 2,
-                components: BTreeMap::from([(MipComponent::FinalStateHashKind, 1)]),
-                start: mip_0002_start,
-                timeout: mip_0002_timeout,
-                activation_delay: T0
-                    .saturating_mul(PERIODS_PER_CYCLE.saturating_add(1))
-                    .saturating_mul(40),
-            },
-            MipState::new(mip_0002_defined_start),
-        ),
+        (mip_0002, mip_0002_state),
     ];
     let mip_store =
         MipStore::try_from((mip_list_1, mip_stats_config)).expect("mip store creation failed");

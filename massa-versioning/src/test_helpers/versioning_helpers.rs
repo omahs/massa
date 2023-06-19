@@ -1,4 +1,4 @@
-use crate::versioning::{Advance, ComponentState, MipInfo, MipState};
+use crate::versioning::{Advance, ComponentState, LockedIn, MipInfo, MipState};
 
 use massa_models::config::VERSIONING_THRESHOLD_TRANSITION_ACCEPTED;
 use massa_time::MassaTime;
@@ -44,12 +44,15 @@ pub fn advance_state_until(at_state: ComponentState, versioning_info: &MipInfo) 
         return state;
     }
 
-    advance_msg.now = start.saturating_add(MassaTime::from_millis(2));
-    advance_msg.threshold = VERSIONING_THRESHOLD_TRANSITION_ACCEPTED;
-    state.on_advance(&advance_msg);
-
-    if matches!(at_state, ComponentState::LockedIn(_)) {
+    if let ComponentState::LockedIn(LockedIn { at: locked_in_time }) = at_state {
+        advance_msg.now = locked_in_time;
+        advance_msg.threshold = VERSIONING_THRESHOLD_TRANSITION_ACCEPTED;
+        state.on_advance(&advance_msg);
         return state;
+    } else {
+        advance_msg.now = start.saturating_add(MassaTime::from_millis(2));
+        advance_msg.threshold = VERSIONING_THRESHOLD_TRANSITION_ACCEPTED;
+        state.on_advance(&advance_msg);
     }
 
     advance_msg.now = advance_msg
