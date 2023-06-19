@@ -1090,6 +1090,11 @@ impl MipStoreRaw {
         let mut value = Vec::new();
 
         for (mip_info, mip_state) in self.store.iter() {
+
+            println!("mip_info: {:?}", mip_info);
+            println!("mip_state: {:?}", mip_state);
+            println!("mip_state.history.last_key_value(): {:?}", mip_state.history.last_key_value());
+
             if let Some((advance, state_id)) = mip_state.history.last_key_value() {
                 #[allow(clippy::overly_complex_bool_expr)]
                 if true || bounds.contains(&advance.now) {

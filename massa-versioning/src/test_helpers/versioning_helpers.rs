@@ -29,7 +29,7 @@ pub fn advance_state_until(at_state: ComponentState, versioning_info: &MipInfo) 
         start_timestamp: start,
         timeout,
         threshold: Default::default(),
-        now: start.saturating_add(MassaTime::from_millis(1)),
+        now: start.saturating_add(MassaTime::from_millis(2)),
         activation_delay: versioning_info.activation_delay,
     };
     state.on_advance(&advance_msg);
@@ -50,7 +50,7 @@ pub fn advance_state_until(at_state: ComponentState, versioning_info: &MipInfo) 
         state.on_advance(&advance_msg);
         return state;
     } else {
-        advance_msg.now = start.saturating_add(MassaTime::from_millis(2));
+        advance_msg.now = start.saturating_add(MassaTime::from_millis(3));
         advance_msg.threshold = VERSIONING_THRESHOLD_TRANSITION_ACCEPTED;
         state.on_advance(&advance_msg);
     }
