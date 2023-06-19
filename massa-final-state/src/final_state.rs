@@ -594,6 +594,8 @@ impl FinalState {
         );
 
         let only_use_xor = self.get_only_use_xor(&slot);
+        
+        println!("mip_status: {:?}", self.mip_store.get_mip_status());
 
         self.db
             .write()

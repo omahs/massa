@@ -329,6 +329,8 @@ async fn launch(
     let mip_store =
         MipStore::try_from((mip_list_1, mip_stats_config)).expect("mip store creation failed");
 
+    println!("MIP_STATUS ON START: {:?}", mip_store.get_mip_status());
+
     // Create final state, either from a snapshot, or from scratch
     let final_state = Arc::new(parking_lot::RwLock::new(
         match args.restart_from_snapshot_at_period {
