@@ -281,7 +281,7 @@ async fn launch(
     let mip_0001_timeout = MassaTime::from_utc_ymd_hms(2023, 6, 14, 16, 0, 0).unwrap();
     let mip_0001_defined_start = MassaTime::from_utc_ymd_hms(2023, 2, 14, 14, 30, 0).unwrap();
     let mip_0002_start = MassaTime::from_utc_ymd_hms(2023, 6, 16, 13, 0, 0).unwrap();
-    let mip_0002_timeout = MassaTime::from_utc_ymd_hms(2023, 6, 19, 14, 0, 0).unwrap();
+    let mip_0002_timeout = MassaTime::from_utc_ymd_hms(2023, 6, 22, 14, 0, 0).unwrap();
     let _mip_0002_defined_start = MassaTime::from_utc_ymd_hms(2023, 6, 16, 10, 0, 0).unwrap();
 
     let mip_0002 = MipInfo {
@@ -291,11 +291,10 @@ async fn launch(
         start: mip_0002_start,
         timeout: mip_0002_timeout,
         activation_delay: T0
-            .saturating_mul(PERIODS_PER_CYCLE.saturating_add(1))
-            .saturating_mul(40),
+            .saturating_mul(10), // 10 periods
     };
 
-    let mip_0002_locked_in_slot = Slot::new(71295, 14);
+    let mip_0002_locked_in_slot = Slot::new(1, 14);
     let mip_0002_locked_in_timestamp = get_block_slot_timestamp(
         THREAD_COUNT,
         T0,
