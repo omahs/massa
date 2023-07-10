@@ -2525,7 +2525,7 @@ dependencies = [
 [[package]]
 name = "massa-sc-runtime"
 version = "0.10.0"
-source = "git+https://github.com/massalabs/massa-sc-runtime?branch=feature/Improve_ABI_types_in_wasmv1#46857ecd9aac5d20c9cb4b560229a7225b3ccb89"
+source = "git+https://github.com/massalabs/massa-sc-runtime?branch=test_for_gas_calib#8c27b5d2b659fe10a44d5dbce2c12b0340e0476a"
 dependencies = [
  "anyhow",
  "as-ffi-bindings",
