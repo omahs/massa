@@ -185,6 +185,8 @@ pub(crate) fn start_connectivity_thread(
             let tick_metrics = tick(massa_metrics.tick_delay);
             let tick_try_connect = tick(config.try_connection_timer.to_duration());
 
+            let mut map_test = HashMap::new();
+
             //Try to connect to peers
             loop {
                 select! {
@@ -260,6 +262,7 @@ pub(crate) fn start_connectivity_thread(
                         let mut addresses_to_connect: Vec<SocketAddr> = Vec::new();
                         {
                             let peer_db_read = peer_db.read();
+                            dbg!(&map_test);
                             for (_, peer_id) in &peer_db_read.index_by_newest {
                                 if peers_connected.contains_key(peer_id) {
                                     continue;
@@ -274,6 +277,13 @@ pub(crate) fn start_connectivity_thread(
                                     if peer_info.last_announce.listeners.is_empty() {
                                         continue;
                                     }
+
+                                    // get in peer_db_read.tested addresses the last time where the peer was tested 
+
+
+
+
+
                                     //TODO: Adapt for multiple listeners
                                     let (addr, _) = peer_info.last_announce.listeners.iter().next().unwrap();
                                     let canonical_ip = addr.ip().to_canonical();
@@ -312,6 +322,14 @@ pub(crate) fn start_connectivity_thread(
                         }
                         for addr in addresses_to_connect {
                             info!("Trying to connect to addr {}", addr);
+                            // insert or update in map_test
+                            map_test
+                            .entry(addr.to_string())
+                            .and_modify(|counter| {
+                                counter = counter + 1;
+                            })
+                            .or_insert(1);
+
                             // We only manage TCP for now
                             if let Err(err) = network_controller.try_connect(addr, config.timeout_connection.to_duration()) {
                                 warn!("Failed to connect to peer {:?}: {:?}", addr, err);
