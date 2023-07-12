@@ -4,10 +4,11 @@ use std::{collections::HashMap, net::SocketAddr, thread::JoinHandle, time::Durat
 
 use crossbeam::channel::tick;
 use crossbeam::select;
+use massa_channel::MassaChannel;
 use massa_channel::{receiver::MassaReceiver, sender::MassaSender};
 use massa_hash::Hash;
 use massa_models::config::SIGNATURE_DESER_SIZE;
-use massa_models::version::{VersionDeserializer, VersionSerializer};
+use massa_models::version::{Version, VersionDeserializer, VersionSerializer};
 use massa_protocol_exports::{
     BootstrapPeers, PeerId, PeerIdDeserializer, PeerIdSerializer, ProtocolConfig,
 };
@@ -92,20 +93,14 @@ impl PeerManagementHandler {
             messages_handler.clone(),
             target_out_connections.clone(),
             default_target_out_connections,
-            "test_sender".to_string(),
         );
 
-
-        let ((connect_sender, _connect_receiver), testers) = Tester::run(
+        let connect_sender = PeerManagementHandler::start_thread_listener(
             config,
-            active_connections.clone(),
+            5,
+            messages_handler,
             peer_db.clone(),
-            messages_handler.clone(),
-            target_out_connections,
-            default_target_out_connections,
-            "connect_sender".to_string(),
         );
-        
 
         let thread_join = std::thread::Builder::new()
         .name("protocol-peer-handler".to_string())
@@ -247,6 +242,8 @@ impl PeerManagementHandler {
                                         if let Err(e) = connect_sender.try_send((peer_id, listeners)) {
                                             debug!("error when sending msg to peer connect : {}", e);
                                         }
+
+
                                   
                                 }
                                 PeerManagementMessage::ListPeers(peers) => {
@@ -284,6 +281,49 @@ impl PeerManagementHandler {
             },
             testers,
         }
+    }
+
+    fn start_thread_listener(
+        protocol_config: &ProtocolConfig,
+        nb_thread: usize,
+        messages_handler: MessagesHandler,
+        peer_db: SharedPeerDB,
+    ) -> MassaSender<(PeerId, HashMap<SocketAddr, TransportType>)> {
+        let (connect_sender, connect_receiver) =
+            MassaChannel::new::<(PeerId, HashMap<SocketAddr, TransportType>)>(
+                "connect_listener".to_string(),
+                Some(1000),
+            );
+
+        let announcement_deser = AnnouncementDeserializer::new(AnnouncementDeserializerArgs {
+            max_listeners: protocol_config.max_size_listeners_per_peer,
+        });
+
+
+        for _ in 0..nb_thread {
+            let connect_receiver = connect_receiver.clone();
+            let messages_handler = messages_handler.clone();
+            let peer_db = peer_db.clone();
+            let announcement_deserializer = announcement_deser.clone();
+            let version = protocol_config.version;
+            std::thread::spawn(move || {
+                while let Ok((_peer_id, listeners)) = connect_receiver.recv() {
+                    if let Some((addr, ty)) = listeners.iter().next() {
+                        let _ = Tester::tcp_handshake(
+                            messages_handler.clone(),
+                            peer_db.clone(),
+                            announcement_deserializer.clone(),
+                            VersionDeserializer::new(),
+                            PeerIdDeserializer::new(),
+                            *addr,
+                            version,
+                        );
+                    }
+                }
+            });
+        }
+
+        connect_sender
     }
 
     pub fn stop(&mut self) {

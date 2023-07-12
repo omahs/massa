@@ -39,7 +39,6 @@ impl Tester {
         messages_handler: MessagesHandler,
         target_out_connections: HashMap<String, (Vec<IpAddr>, usize)>,
         default_target_out_connections: usize,
-        channel_name: String,
     ) -> (
         (
             MassaSender<(PeerId, HashMap<SocketAddr, TransportType>)>,
@@ -51,7 +50,7 @@ impl Tester {
 
         // create shared channel between thread for launching test
         let (test_sender, test_receiver) = MassaChannel::new(
-            channel_name,
+            "test_sender".to_string(),
             Some(config.max_size_channel_commands_peer_testers),
         );
 
@@ -79,6 +78,7 @@ impl Tester {
         addr: SocketAddr,
         our_version: Version,
     ) -> PeerNetResult<PeerId> {
+        dbg!("start handshake");
         let result = {
             let mut socket =
                 std::net::TcpStream::connect_timeout(&addr, Duration::from_millis(500))
