@@ -115,13 +115,7 @@ impl PeerManagementHandler {
                     max_peers_per_announcement: config.max_size_peers_announcement,
                     max_listeners_per_peer: config.max_size_listeners_per_peer,
                 });
-                let announcement_deser = AnnouncementDeserializer::new(
-                    AnnouncementDeserializerArgs {
-                        max_listeners: config.max_size_listeners_per_peer,
-                    },
-                );
 
-                let mut peer_try_connect = 0;
             move || {
                 loop {
                     select! {
@@ -212,39 +206,9 @@ impl PeerManagementHandler {
                             match message {
                                 PeerManagementMessage::NewPeerConnected((peer_id, listeners)) => {
                                     debug!("Received peer message: NewPeerConnected from {}", peer_id);
-                                    // if let Some((addr, _)) = listeners.iter().next() {
-                                    //     let deser = announcement_deser.clone();
-                                    //     let handler = messages_handler.clone();
-                                    //     let db =peer_db.clone();
-                                    //     peer_try_connect += 1;
-                                    //     dbg!(peer_try_connect);
-                                    //     let address = *addr;
-                                    //     std::thread::spawn(move || {
-                                    //         let res = Tester::tcp_handshake(
-                                    //             handler,
-                                    //             db,
-                                    //             deser,
-                                    //             VersionDeserializer::new(),
-                                    //             PeerIdDeserializer::new(),
-                                    //             address,
-                                    //             config.version,
-                                    //         );
-                                    //         dbg!(res);
-                                    //     });
-                                    
-                               
-                     
-                                    // } else  {
-                                    //     // if let Err(e) = test_sender.try_send((peer_id, listeners)) {
-                                    //     //     debug!("error when sending msg to peer tester : {}", e);
-                                    //     // }
-                                    // }
                                         if let Err(e) = connect_sender.try_send((peer_id, listeners)) {
                                             debug!("error when sending msg to peer connect : {}", e);
                                         }
-
-
-                                  
                                 }
                                 PeerManagementMessage::ListPeers(peers) => {
                                     debug!("Received peer message: List peers from {}", peer_id);
@@ -283,6 +247,7 @@ impl PeerManagementHandler {
         }
     }
 
+    /// thread pool for incoming connections
     fn start_thread_listener(
         protocol_config: &ProtocolConfig,
         nb_thread: usize,
@@ -299,7 +264,6 @@ impl PeerManagementHandler {
             max_listeners: protocol_config.max_size_listeners_per_peer,
         });
 
-
         for _ in 0..nb_thread {
             let connect_receiver = connect_receiver.clone();
             let messages_handler = messages_handler.clone();
@@ -308,7 +272,7 @@ impl PeerManagementHandler {
             let version = protocol_config.version;
             std::thread::spawn(move || {
                 while let Ok((_peer_id, listeners)) = connect_receiver.recv() {
-                    if let Some((addr, ty)) = listeners.iter().next() {
+                    if let Some((addr, _ty)) = listeners.iter().next() {
                         let _ = Tester::tcp_handshake(
                             messages_handler.clone(),
                             peer_db.clone(),

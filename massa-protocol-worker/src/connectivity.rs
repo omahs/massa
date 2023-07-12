@@ -185,9 +185,6 @@ pub(crate) fn start_connectivity_thread(
             let tick_metrics = tick(massa_metrics.tick_delay);
             let tick_try_connect = tick(config.try_connection_timer.to_duration());
 
-            let mut map_test = HashMap::new();
-
-   
             //Try to connect to peers
             loop {
                 select! {
@@ -317,16 +314,8 @@ pub(crate) fn start_connectivity_thread(
                                 }
                         }
 
-                        dbg!(&addresses_to_connect.len());
                         for addr in addresses_to_connect {
                             info!("Trying to connect to addr {}", addr);
-                            // insert or update in map_test
-                            map_test
-                            .entry(addr.to_string())
-                            .and_modify(|counter| {
-                                *counter += 1;
-                            })
-                            .or_insert(1);
 
                             // We only manage TCP for now
                             if let Err(err) = network_controller.try_connect(addr, config.timeout_connection.to_duration()) {

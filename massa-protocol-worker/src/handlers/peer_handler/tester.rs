@@ -78,7 +78,6 @@ impl Tester {
         addr: SocketAddr,
         our_version: Version,
     ) -> PeerNetResult<PeerId> {
-        dbg!("start handshake");
         let result = {
             let mut socket =
                 std::net::TcpStream::connect_timeout(&addr, Duration::from_millis(500))
