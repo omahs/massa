@@ -187,6 +187,7 @@ pub(crate) fn start_connectivity_thread(
 
             let mut map_test = HashMap::new();
 
+   
             //Try to connect to peers
             loop {
                 select! {
@@ -262,8 +263,42 @@ pub(crate) fn start_connectivity_thread(
                         let mut addresses_to_connect: Vec<SocketAddr> = Vec::new();
                         {
                             let peer_db_read = peer_db.read();
-                            dbg!(&map_test);
+                            dbg!(&peer_db_read.peers.len());
+                            peer_db_read.peers.iter().for_each(|k| {
+                                info!("{:?} : {:?}", &k.0, &k.1.state);
+                            });
+                            dbg!(&map_test.len());
+                            //dbg!(&map_test);
+
+                            // get TRUSTED peers
+                      
+                            let active_conn = network_controller.get_active_connections();
+                            let peers_connected = active_conn.get_peers_connected();
+                            addresses_to_connect = peer_db_read.peers.iter().filter_map(|p| {
+                                if p.1.state == PeerState::Trusted {
+                                    if !peers_connected.contains_key(p.0) {
+                                        if let Some((addr, _)) = p.1.last_announce.listeners.iter().next() {
+                                            if !addresses_to_connect.contains(&addr) {
+   
+                                                return Some(*addr);
+                                            }
+                                        }
+                                     
+                                    
+                                    }
+                                }
+                                None
+                            }).collect();
+
+                            dbg!(&addresses_to_connect);
+
+
                             for (_, peer_id) in &peer_db_read.index_by_newest {
+
+                                if addresses_to_connect.len() >= 15 {
+                                    break;
+                                }
+
                                 if peers_connected.contains_key(peer_id) {
                                     continue;
                                 }
@@ -277,12 +312,6 @@ pub(crate) fn start_connectivity_thread(
                                     if peer_info.last_announce.listeners.is_empty() {
                                         continue;
                                     }
-
-                                    // get in peer_db_read.tested addresses the last time where the peer was tested 
-
-
-
-
 
                                     //TODO: Adapt for multiple listeners
                                     let (addr, _) = peer_info.last_announce.listeners.iter().next().unwrap();
@@ -303,11 +332,13 @@ pub(crate) fn start_connectivity_thread(
                                     if let Some(category) = category_found {
                                         for (name, category_infos) in &mut slots_per_category {
                                             if name == category && category_infos > &mut 0 {
-                                                addresses_to_connect.push(*addr);
-                                                *category_infos -= 1;
+                                                if !addresses_to_connect.contains(addr) {
+                                                    addresses_to_connect.push(*addr);
+                                                    *category_infos -= 1;
+                                                }
                                             }
                                         }
-                                    } else if slot_default_category > 0 {
+                                    } else if slot_default_category > 0 &&  !addresses_to_connect.contains(addr) {
                                         addresses_to_connect.push(*addr);
                                         slot_default_category -= 1;
                                     }
@@ -326,7 +357,7 @@ pub(crate) fn start_connectivity_thread(
                             map_test
                             .entry(addr.to_string())
                             .and_modify(|counter| {
-                                counter = counter + 1;
+                                *counter += 1;
                             })
                             .or_insert(1);
 

@@ -89,7 +89,7 @@ impl PeerManagementHandler {
             config,
             active_connections.clone(),
             peer_db.clone(),
-            messages_handler,
+            messages_handler.clone(),
             target_out_connections,
             default_target_out_connections,
         );
@@ -107,6 +107,13 @@ impl PeerManagementHandler {
                     max_peers_per_announcement: config.max_size_peers_announcement,
                     max_listeners_per_peer: config.max_size_listeners_per_peer,
                 });
+                let announcement_deser = AnnouncementDeserializer::new(
+                    AnnouncementDeserializerArgs {
+                        max_listeners: config.max_size_listeners_per_peer,
+                    },
+                );
+
+                let mut peer_try_connect = 0;
             move || {
                 loop {
                     select! {
@@ -197,9 +204,31 @@ impl PeerManagementHandler {
                             match message {
                                 PeerManagementMessage::NewPeerConnected((peer_id, listeners)) => {
                                     debug!("Received peer message: NewPeerConnected from {}", peer_id);
-                                    if let Err(e) = test_sender.try_send((peer_id, listeners)) {
-                                        debug!("error when sending msg to peer tester : {}", e);
+                                    if let Some((addr, _)) = listeners.iter().next() {
+                                        let deser = announcement_deser.clone();
+                                        let handler = messages_handler.clone();
+                                        let db =peer_db.clone();
+                                        peer_try_connect += 1;
+                                        dbg!(peer_try_connect);
+                                        let address = *addr;
+                                        let res = Tester::tcp_handshake(
+                                            handler,
+                                            db,
+                                            deser,
+                                            VersionDeserializer::new(),
+                                            PeerIdDeserializer::new(),
+                                            address,
+                                            config.version,
+                                        );
+                                        dbg!(res);
+                     
+                                    } else  {
+                                        // if let Err(e) = test_sender.try_send((peer_id, listeners)) {
+                                        //     debug!("error when sending msg to peer tester : {}", e);
+                                        // }
                                     }
+
+                                  
                                 }
                                 PeerManagementMessage::ListPeers(peers) => {
                                     debug!("Received peer message: List peers from {}", peer_id);
