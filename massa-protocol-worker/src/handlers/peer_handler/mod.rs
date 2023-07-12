@@ -90,9 +90,22 @@ impl PeerManagementHandler {
             active_connections.clone(),
             peer_db.clone(),
             messages_handler.clone(),
+            target_out_connections.clone(),
+            default_target_out_connections,
+            "test_sender".to_string(),
+        );
+
+
+        let ((connect_sender, _connect_receiver), testers) = Tester::run(
+            config,
+            active_connections.clone(),
+            peer_db.clone(),
+            messages_handler.clone(),
             target_out_connections,
             default_target_out_connections,
+            "connect_sender".to_string(),
         );
+        
 
         let thread_join = std::thread::Builder::new()
         .name("protocol-peer-handler".to_string())
@@ -204,34 +217,36 @@ impl PeerManagementHandler {
                             match message {
                                 PeerManagementMessage::NewPeerConnected((peer_id, listeners)) => {
                                     debug!("Received peer message: NewPeerConnected from {}", peer_id);
-                                    if let Some((addr, _)) = listeners.iter().next() {
-                                        let deser = announcement_deser.clone();
-                                        let handler = messages_handler.clone();
-                                        let db =peer_db.clone();
-                                        peer_try_connect += 1;
-                                        dbg!(peer_try_connect);
-                                        let address = *addr;
-                                        std::thread::spawn(move || {
-                                            let res = Tester::tcp_handshake(
-                                                handler,
-                                                db,
-                                                deser,
-                                                VersionDeserializer::new(),
-                                                PeerIdDeserializer::new(),
-                                                address,
-                                                config.version,
-                                            );
-                                            dbg!(res);
-                                        });
+                                    // if let Some((addr, _)) = listeners.iter().next() {
+                                    //     let deser = announcement_deser.clone();
+                                    //     let handler = messages_handler.clone();
+                                    //     let db =peer_db.clone();
+                                    //     peer_try_connect += 1;
+                                    //     dbg!(peer_try_connect);
+                                    //     let address = *addr;
+                                    //     std::thread::spawn(move || {
+                                    //         let res = Tester::tcp_handshake(
+                                    //             handler,
+                                    //             db,
+                                    //             deser,
+                                    //             VersionDeserializer::new(),
+                                    //             PeerIdDeserializer::new(),
+                                    //             address,
+                                    //             config.version,
+                                    //         );
+                                    //         dbg!(res);
+                                    //     });
                                     
                                
                      
-                                    } else  {
-                                        // if let Err(e) = test_sender.try_send((peer_id, listeners)) {
-                                        //     debug!("error when sending msg to peer tester : {}", e);
-                                        // }
-                                    }
-
+                                    // } else  {
+                                    //     // if let Err(e) = test_sender.try_send((peer_id, listeners)) {
+                                    //     //     debug!("error when sending msg to peer tester : {}", e);
+                                    //     // }
+                                    // }
+                                        if let Err(e) = connect_sender.try_send((peer_id, listeners)) {
+                                            debug!("error when sending msg to peer connect : {}", e);
+                                        }
                                   
                                 }
                                 PeerManagementMessage::ListPeers(peers) => {

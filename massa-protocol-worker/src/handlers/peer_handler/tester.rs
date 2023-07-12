@@ -39,6 +39,7 @@ impl Tester {
         messages_handler: MessagesHandler,
         target_out_connections: HashMap<String, (Vec<IpAddr>, usize)>,
         default_target_out_connections: usize,
+        channel_name: String,
     ) -> (
         (
             MassaSender<(PeerId, HashMap<SocketAddr, TransportType>)>,
@@ -50,7 +51,7 @@ impl Tester {
 
         // create shared channel between thread for launching test
         let (test_sender, test_receiver) = MassaChannel::new(
-            "test_sender".to_string(),
+            channel_name,
             Some(config.max_size_channel_commands_peer_testers),
         );
 

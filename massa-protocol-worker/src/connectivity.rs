@@ -263,21 +263,6 @@ pub(crate) fn start_connectivity_thread(
                         let mut addresses_to_connect: Vec<SocketAddr> = Vec::new();
                         {
                                 let peer_db_read = peer_db.read();
-                                // addresses_to_connect = peer_db_read.peers.iter().filter_map(|p| {
-                                //     if p.1.state == PeerState::Trusted {
-                                //         if !peers_connected.contains_key(p.0) {
-                                //             if let Some((addr, _)) = p.1.last_announce.listeners.iter().next() {
-                                //                 if !addresses_to_connect.contains(&addr) {
-       
-                                //                     return Some(*addr);
-                                //                 }
-                                //             }
-                                //         }
-                                //     }
-                                //     None
-                                // }).take(slot_default_category * 2).collect();
-
-    
                                 for (_, peer_id) in &peer_db_read.index_by_newest {
                                     if peers_connected.contains_key(peer_id) {
                                         continue;
