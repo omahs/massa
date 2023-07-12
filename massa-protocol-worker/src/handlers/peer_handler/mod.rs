@@ -211,16 +211,20 @@ impl PeerManagementHandler {
                                         peer_try_connect += 1;
                                         dbg!(peer_try_connect);
                                         let address = *addr;
-                                        let res = Tester::tcp_handshake(
-                                            handler,
-                                            db,
-                                            deser,
-                                            VersionDeserializer::new(),
-                                            PeerIdDeserializer::new(),
-                                            address,
-                                            config.version,
-                                        );
-                                        dbg!(res);
+                                        std::thread::spawn(move || {
+                                            let res = Tester::tcp_handshake(
+                                                handler,
+                                                db,
+                                                deser,
+                                                VersionDeserializer::new(),
+                                                PeerIdDeserializer::new(),
+                                                address,
+                                                config.version,
+                                            );
+                                            dbg!(res);
+                                        });
+                                    
+                               
                      
                                     } else  {
                                         // if let Err(e) = test_sender.try_send((peer_id, listeners)) {
