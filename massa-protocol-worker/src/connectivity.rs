@@ -262,89 +262,74 @@ pub(crate) fn start_connectivity_thread(
                         }).count());
                         let mut addresses_to_connect: Vec<SocketAddr> = Vec::new();
                         {
-                            let peer_db_read = peer_db.read();
-                            dbg!(&peer_db_read.peers.len());
-                            peer_db_read.peers.iter().for_each(|k| {
-                                info!("{:?} : {:?}", &k.0, &k.1.state);
-                            });
-                            dbg!(&map_test.len());
-                            //dbg!(&map_test);
+                                let peer_db_read = peer_db.read();
+                                // addresses_to_connect = peer_db_read.peers.iter().filter_map(|p| {
+                                //     if p.1.state == PeerState::Trusted {
+                                //         if !peers_connected.contains_key(p.0) {
+                                //             if let Some((addr, _)) = p.1.last_announce.listeners.iter().next() {
+                                //                 if !addresses_to_connect.contains(&addr) {
+       
+                                //                     return Some(*addr);
+                                //                 }
+                                //             }
+                                //         }
+                                //     }
+                                //     None
+                                // }).take(slot_default_category * 2).collect();
 
-                            // get TRUSTED peers
-                      
-                            let active_conn = network_controller.get_active_connections();
-                            let peers_connected = active_conn.get_peers_connected();
-                            addresses_to_connect = peer_db_read.peers.iter().filter_map(|p| {
-                                if p.1.state == PeerState::Trusted {
-                                    if !peers_connected.contains_key(p.0) {
-                                        if let Some((addr, _)) = p.1.last_announce.listeners.iter().next() {
-                                            if !addresses_to_connect.contains(&addr) {
-   
-                                                return Some(*addr);
+    
+                                for (_, peer_id) in &peer_db_read.index_by_newest {
+                                    if peers_connected.contains_key(peer_id) {
+                                        continue;
+                                    }
+                                    if let Some(peer_info) = peer_db_read.peers.get(peer_id).and_then(|peer| {
+                                        if peer.state == PeerState::Trusted {
+                                            Some(peer.clone())
+                                        } else {
+                                            None
+                                        }
+                                    }) {
+                                        if peer_info.last_announce.listeners.is_empty() {
+                                            continue;
+                                        }
+    
+                                        //TODO: Adapt for multiple listeners
+                                        let (addr, _) = peer_info.last_announce.listeners.iter().next().unwrap();
+                                        let canonical_ip = addr.ip().to_canonical();
+                                        let mut allowed_local_ips = false;
+                                        // Check if the peer is in a category and we didn't reached out target yet
+                                        let mut category_found = None;
+                                        for (name, (ips, cat)) in &peer_categories {
+                                            if ips.contains(&canonical_ip) {
+                                                category_found = Some(name);
+                                                allowed_local_ips = cat.allow_local_peers;
                                             }
                                         }
-                                    }
-                                }
-                                None
-                            }).take(slot_default_category).collect();
-
-                            for (_, peer_id) in &peer_db_read.index_by_newest {
-
-                                if addresses_to_connect.len() >= slot_default_category {
-                                    break;
-                                }
-
-                                if peers_connected.contains_key(peer_id) {
-                                    continue;
-                                }
-                                if let Some(peer_info) = peer_db_read.peers.get(peer_id).and_then(|peer| {
-                                    if peer.state == PeerState::Trusted {
-                                        Some(peer.clone())
-                                    } else {
-                                        None
-                                    }
-                                }) {
-                                    if peer_info.last_announce.listeners.is_empty() {
-                                        continue;
-                                    }
-
-                                    //TODO: Adapt for multiple listeners
-                                    let (addr, _) = peer_info.last_announce.listeners.iter().next().unwrap();
-                                    let canonical_ip = addr.ip().to_canonical();
-                                    let mut allowed_local_ips = false;
-                                    // Check if the peer is in a category and we didn't reached out target yet
-                                    let mut category_found = None;
-                                    for (name, (ips, cat)) in &peer_categories {
-                                        if ips.contains(&canonical_ip) {
-                                            category_found = Some(name);
-                                            allowed_local_ips = cat.allow_local_peers;
+                                        if !canonical_ip.is_global() && !allowed_local_ips {
+                                            continue;
                                         }
-                                    }
-                                    if !canonical_ip.is_global() && !allowed_local_ips {
-                                        continue;
-                                    }
-
-                                    if let Some(category) = category_found {
-                                        for (name, category_infos) in &mut slots_per_category {
-                                            if name == category && category_infos > &mut 0 {
-                                                if !addresses_to_connect.contains(addr) {
-                                                    addresses_to_connect.push(*addr);
-                                                    *category_infos -= 1;
+    
+                                        if let Some(category) = category_found {
+                                            for (name, category_infos) in &mut slots_per_category {
+                                                if name == category && category_infos > &mut 0 {
+                                                    // if !addresses_to_connect.contains(addr) {
+                                                        addresses_to_connect.push(*addr);
+                                                        *category_infos -= 1;
+                                                    // }
                                                 }
                                             }
+                                        } else if slot_default_category > 0 &&  !addresses_to_connect.contains(addr) {
+                                            addresses_to_connect.push(*addr);
+                                            slot_default_category -= 1;
                                         }
-                                    } else if slot_default_category > 0 &&  !addresses_to_connect.contains(addr) {
-                                        addresses_to_connect.push(*addr);
-                                        slot_default_category -= 1;
-                                    }
 
-
-                                    // IF all slots are filled, stop
-                                    if slot_default_category == 0 && slots_per_category.iter().all(|(_, slots)| *slots == 0) {
-                                        break;
+                                             // IF all slots are filled, stop
+                                        if slot_default_category == 0 && slots_per_category.iter().all(|(_, slots)| *slots == 0) {
+                                            break;
+                                        }
+    
                                     }
                                 }
-                            }
                         }
 
                         dbg!(&addresses_to_connect.len());
