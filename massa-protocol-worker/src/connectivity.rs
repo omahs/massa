@@ -288,10 +288,7 @@ pub(crate) fn start_connectivity_thread(
                                     }
                                 }
                                 None
-                            }).collect();
-
-                            dbg!(&addresses_to_connect);
-
+                            }).take(25).collect();
 
                             for (_, peer_id) in &peer_db_read.index_by_newest {
 
