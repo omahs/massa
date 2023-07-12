@@ -283,16 +283,14 @@ pub(crate) fn start_connectivity_thread(
                                                 return Some(*addr);
                                             }
                                         }
-                                     
-                                    
                                     }
                                 }
                                 None
-                            }).take(25).collect();
+                            }).take(slot_default_category).collect();
 
                             for (_, peer_id) in &peer_db_read.index_by_newest {
 
-                                if addresses_to_connect.len() >= 15 {
+                                if addresses_to_connect.len() >= slot_default_category {
                                     break;
                                 }
 
@@ -348,6 +346,8 @@ pub(crate) fn start_connectivity_thread(
                                 }
                             }
                         }
+
+                        dbg!(&addresses_to_connect.len());
                         for addr in addresses_to_connect {
                             info!("Trying to connect to addr {}", addr);
                             // insert or update in map_test
