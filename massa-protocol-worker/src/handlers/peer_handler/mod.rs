@@ -481,6 +481,8 @@ impl InitConnectionHandler<PeerId, Context, MessagesHandler> for MassaHandshake 
                     Ok((peer_id.clone(), Some(announcement)))
                 }
                 1 => {
+                    tracing::log::info!("TIM Got fallback function return");
+                    tracing::log::info!("TIM data: {:?}", received.get(1..));
                     self.message_handlers.handle(
                         received.get(1..).ok_or(
                             PeerNetError::HandshakeError
