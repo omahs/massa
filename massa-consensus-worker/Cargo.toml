@@ -1,6 +1,6 @@
 [package]
 name = "massa_consensus_worker"
-version = "0.24.0"
+version = "0.25.0"
 authors = ["Massa Labs <info@massa.net>"]
 edition = "2021"
 
@@ -18,6 +18,7 @@ massa_channel = {workspace = true}
 massa_metrics = {workspace = true}
 massa_consensus_exports = {workspace = true}
 massa_models = {workspace = true}
+massa_serialization = {workspace = true}
 massa_storage = {workspace = true}
 massa_signature = {workspace = true}
 massa_time = {workspace = true}

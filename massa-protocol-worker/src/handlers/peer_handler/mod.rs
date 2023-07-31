@@ -6,6 +6,7 @@ use crossbeam::channel::tick;
 use crossbeam::select;
 use massa_channel::{receiver::MassaReceiver, sender::MassaSender};
 use massa_hash::Hash;
+use massa_metrics::MassaMetrics;
 use massa_models::config::SIGNATURE_DESER_SIZE;
 use massa_models::version::{VersionDeserializer, VersionSerializer};
 use massa_protocol_exports::{
@@ -82,6 +83,7 @@ impl PeerManagementHandler {
         target_out_connections: HashMap<String, (Vec<IpAddr>, usize)>,
         default_target_out_connections: usize,
         config: &ProtocolConfig,
+        massa_metrics: MassaMetrics,
     ) -> Self {
         let message_serializer = PeerManagementMessageSerializer::new();
 
@@ -92,6 +94,7 @@ impl PeerManagementHandler {
             messages_handler,
             target_out_connections,
             default_target_out_connections,
+            massa_metrics,
         );
 
         let thread_join = std::thread::Builder::new()
@@ -107,6 +110,7 @@ impl PeerManagementHandler {
                     max_peers_per_announcement: config.max_size_peers_announcement,
                     max_listeners_per_peer: config.max_size_listeners_per_peer,
                 });
+
             move || {
                 loop {
                     select! {
@@ -197,9 +201,9 @@ impl PeerManagementHandler {
                             match message {
                                 PeerManagementMessage::NewPeerConnected((peer_id, listeners)) => {
                                     debug!("Received peer message: NewPeerConnected from {}", peer_id);
-                                    if let Err(e) = test_sender.try_send((peer_id, listeners)) {
-                                        debug!("error when sending msg to peer tester : {}", e);
-                                    }
+                                        if let Err(e) = test_sender.try_send((peer_id, listeners)) {
+                                            debug!("error when sending msg to peer connect : {}", e);
+                                        }
                                 }
                                 PeerManagementMessage::ListPeers(peers) => {
                                     debug!("Received peer message: List peers from {}", peer_id);
@@ -512,11 +516,11 @@ impl InitConnectionHandler<PeerId, Context, MessagesHandler> for MassaHandshake 
                         .peers
                         .entry(peer_id.clone())
                         .and_modify(|info| {
-                            info.last_announce = announcement.clone();
+                            info.last_announce = Some(announcement.clone());
                             info.state = PeerState::Trusted;
                         })
                         .or_insert(PeerInfo {
-                            last_announce: announcement.clone(),
+                            last_announce: Some(announcement.clone()),
                             state: PeerState::Trusted,
                         });
                 }
