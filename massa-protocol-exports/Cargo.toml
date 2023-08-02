@@ -13,7 +13,7 @@ thiserror = {workspace = true}
 nom = {workspace = true}
 serde = {workspace = true, "features" = ["derive"]}
 serde_json = {workspace = true}   # BOM UPGRADE     Revert to "1.0" if problem
-peernet = {workspace = true}
+peernet = {workspace = true, features = ["deadlock_detection"]}
 tempfile = {workspace = true, "optional" = true}   # BOM UPGRADE     Revert to {"version": "3.3", "optional": true} if problem
 mockall = {workspace = true}
 massa_models = {workspace = true}

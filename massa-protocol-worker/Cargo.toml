@@ -15,7 +15,7 @@ crossbeam = {workspace = true}
 serde_json = {workspace = true}   # BOM UPGRADE     Revert to "1.0" if problem
 nom = {workspace = true}
 num_enum = {workspace = true}
-peernet = {workspace = true}
+peernet = {workspace = true, features = ["deadlock_detection"]}
 tempfile = {workspace = true, "optional" = true}   # BOM UPGRADE     Revert to {"version": "3.3", "optional": true} if problem
 rayon = {workspace = true}
 schnellru = {workspace = true}   # BOM UPGRADE     Revert to "0.2.1" if problem
