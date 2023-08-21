@@ -348,6 +348,8 @@
     ip_list_max_size = 10000
     # refuse consecutive bootstrap attempts from a given IP when the interval between them is lower than per_ip_min_interval milliseconds
     per_ip_min_interval = 180000
+    # read-write limitation for a connection in bytes per seconds (about the bootstrap specifically)
+    rate_limit = 20_971_520    # 20 Mo/sec
 
 [pool]
     # max number of operations kept in the pool
