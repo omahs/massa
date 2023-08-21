@@ -343,7 +343,7 @@ async fn launch(
     let mip_store = final_state.read().mip_store.clone();
 
     let bootstrap_config: BootstrapConfig = BootstrapConfig {
-        rate_limit: SETTINGS.protocol.rate_limit,
+        rate_limit: SETTINGS.bootstrap.rate_limit,
         bootstrap_list: SETTINGS.bootstrap.bootstrap_list.clone(),
         bootstrap_protocol: SETTINGS.bootstrap.bootstrap_protocol,
         bootstrap_whitelist_path: SETTINGS.bootstrap.bootstrap_whitelist_path.clone(),

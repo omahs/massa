@@ -71,6 +71,7 @@ pub struct BootstrapSettings {
     pub ip_list_max_size: usize,
     /// Allocated time with which to manage the bootstrap process
     pub bootstrap_timeout: MassaTime,
+    pub rate_limit: u64,
 }
 
 /// Factory settings
